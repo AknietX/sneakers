@@ -1,3 +1,13 @@
+<script setup>
+import { fromJSON } from 'postcss';
+
+
+const emit = defineEmits(['openDrawer',])
+
+</script>
+
+
+
 <template>
       <header class="flex justify-between border-b border-gray-200 px-10 py-8 items-center rounded-b-lg">
       <div class="flex items-center">
@@ -9,7 +19,7 @@
       </div> 
       <div class="">
         <ul class="flex items-center gap-10">
-          <li class="flex items-center cursor-pointer gap-3 text-gray-500 hover:text-black">
+          <li @click="() => emit('openDrawer')" class="flex items-center cursor-pointer gap-3 text-gray-500 hover:text-black">
             <img src="/cart.svg" alt="cart">
             <b>1205 руб.</b>
           </li>

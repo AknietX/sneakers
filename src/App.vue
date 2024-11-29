@@ -1,7 +1,7 @@
 <script setup>
 
 
-import { onMounted, ref, reactive, watch } from 'vue';
+import { onMounted, ref, reactive, watch, provide } from 'vue';
 import axios, { Axios } from 'axios';
   
 
@@ -10,6 +10,44 @@ import axios, { Axios } from 'axios';
   import Drawer from './components/drawer.vue';
 
 const items = ref([])
+const cart  = ref([])
+
+
+const stopScroll = ()=>{
+  document.body.classList.add('overflow-hidden')
+}
+const contineScroll = ()=>{
+  document.body.classList.remove('overflow-hidden')
+}
+
+const AddCart = (item) =>{
+  cart.value.push(item)
+  item.isAdded = true
+}
+const RemoveFromCart = (item) => {
+  cart.value.splice(cart.value.indexOf(item), 1)
+  item.isAdded = false
+}
+
+const onClickAddPlus= (item) =>{
+
+  if(!item.isAdded){
+    AddCart(item)
+  }else{
+    RemoveFromCart(item)
+  }
+}
+
+const drawerOpen = ref(false)
+
+const closeDrawer = () =>{
+  drawerOpen.value = false
+}
+
+const openDrawer = () =>{
+  drawerOpen.value = true
+}
+
 
 const filters = reactive({
   sortBy:'title',
@@ -17,21 +55,30 @@ const filters = reactive({
 })
 
 const fetchFavorites = async () => {
-  const { data:favorites } = await axios.get("https://7d51df7b87030aad.mokky.dev/favorites")
-  items.value = items.value.map((item)=>{
-    const favorite = favorites.find((favorite) => favorite.parentId === item.id)
-    if(!favorite){
-      return item
-    }else{
-      return {
-        ...item,
-        isFavorite: true,
-        favoriteId: favorite.id
+  try{
+
+    const { data:favorites } = await axios.get("https://7d51df7b87030aad.mokky.dev/favorites")
+    items.value = items.value.map((item)=>{
+      const favorite = favorites.find((favorite) => favorite.parentId === item.id)
+      if(!favorite){
+        return item
+        
       }
-    }
-  })
-  console.log(items.value)
-}
+      return {
+          ...item,
+          isFavorite: true,
+          favoriteId: null,
+          favoriteId: favorite.id
+      }
+      });
+
+      console.log(items.value)
+  }catch (err){
+    console.log(err)
+  }
+  
+};
+
 
 const fetchItems = async () =>{
   try{
@@ -59,6 +106,39 @@ const fetchItems = async () =>{
   }
 }
 
+const addToFavorite = async (item) => {
+  try{
+
+    if(!item.isFavorite){
+        const obj = {
+          parentId: item.id
+        }
+        item.isFavorite = true;
+        const { data } = await axios.post('https://7d51df7b87030aad.mokky.dev/favorites', obj)
+        
+        item.favoriteId = data.id
+    
+        console.log(data)
+    }else{
+      item.isFavorite = false;
+      await axios.delete(`https://7d51df7b87030aad.mokky.dev/favorites/${item.favoriteId}`)
+      item.favoriteId = null;
+    }
+
+  }catch (err){
+    console.log(err)
+  }
+}
+
+provide('cart', {
+  closeDrawer,
+  openDrawer,
+  cart,
+  RemoveFromCart,
+  stopScroll,
+  contineScroll
+})
+
 onMounted(async () =>{
   await fetchItems()
   await fetchFavorites()
@@ -76,14 +156,17 @@ const onChangeSelect = (event) =>{
 }
 watch(filters, fetchItems)
 
+
+
+
 </script>
 
 
 
 <template>
-  <!-- <Drawer /> -->
+  <Drawer v-if="drawerOpen"/>
   <div class="w-4/5 m-auto bg-white rounded-xl shadow-xl mt-14 pb-8">
-    <Header />
+    <Header @open-Drawer="openDrawer"></Header>
 
     <div class="p-10">
       <div class="flex justify-between items-center mb-7">
@@ -106,7 +189,7 @@ watch(filters, fetchItems)
 
       </div>
 
-      <cardList :items="items"/>
+      <cardList :items="items" @addToFavorite="addToFavorite" @add-to-cart = onClickAddPlus />
     </div>
 
 
