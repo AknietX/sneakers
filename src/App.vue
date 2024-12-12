@@ -1,17 +1,26 @@
 <script setup>
 
 
-import { onMounted, ref, reactive, watch, provide } from 'vue';
+import { onMounted, ref, reactive, watch, provide, computed } from 'vue';
 import axios, { Axios } from 'axios';
   
 
   import Header from './components/header.vue'
   import cardList from './components/cardList.vue'
   import Drawer from './components/drawer.vue';
+import js from '@eslint/js';
+import CartItem from './components/cartItem.vue';
 
 const items = ref([])
 const cart  = ref([])
+const isCreatingOrder = ref(false)
 
+const cartIsEmpty = computed(() => cart.value.length === 0)
+
+const cartButtonDisabled = computed(() => isCreatingOrder.value || cartIsEmpty.value )
+
+const totalPrice = computed(() => cart.value.reduce((acc, item) => acc + item.price, 0))
+const vatPrice = computed(() => Math.round((totalPrice.value / 100) * 5))
 
 const stopScroll = ()=>{
   document.body.classList.add('overflow-hidden')
@@ -28,6 +37,25 @@ const RemoveFromCart = (item) => {
   cart.value.splice(cart.value.indexOf(item), 1)
   item.isAdded = false
 }
+
+const createOrder = async () =>{
+  try{
+    isCreatingOrder.value = true
+    const {data}  = await axios.post(`https://f9e0dc9b5d5910b7.mokky.dev/orders`, {
+      items: cart.value,
+      totalPrice: totalPrice.value
+    })
+
+    cart.value = []
+    
+    return data
+  }catch(err){
+    console.log(err)
+  }finally{
+    isCreatingOrder.value = false
+  }
+}
+
 
 const onClickAddPlus= (item) =>{
 
@@ -130,20 +158,45 @@ const addToFavorite = async (item) => {
   }
 }
 
+
+onMounted(async () =>{
+  const localCart = localStorage.getItem('cartED');
+  cart.value = localCart ? JSON.parse(localCart) : [];
+
+  await fetchItems()
+  await fetchFavorites()
+
+  items.value = items.value.map((item)=>({
+    ...item,
+    isAdded: cart.value.some((cartItem) => cartItem.id === item.id)
+  }))
+})
+
+watch(filters, fetchItems)
+
+
+watch(cart, ()=>{
+  items.value = items.value.map((item)=>({
+    ...item,
+    isAdded: false
+  }))
+})
+
+watch(
+  cart,
+ () => {
+    localStorage.setItem('cartED', JSON.stringify(cart.value))
+  },
+  {deep: true}
+)
+
 provide('cart', {
-  closeDrawer,
   openDrawer,
   cart,
   RemoveFromCart,
   stopScroll,
   contineScroll
 })
-
-onMounted(async () =>{
-  await fetchItems()
-  await fetchFavorites()
-})
-
 
 
 const onChangeSelectInput = (event) => {
@@ -154,7 +207,23 @@ const onChangeSelect = (event) =>{
   filters.sortBy = event.target.value
   
 }
-watch(filters, fetchItems)
+// scrolling
+const isCartOpen = ref(false)
+
+    const openCart = () =>{
+        isCartOpen.value = true
+    }
+    const closeCart = () =>{
+        isCartOpen.value = false
+    }
+
+    watch(isCartOpen, (newValue) => {
+  if (newValue) {
+    document.body.classList.add('overflow-hidden'); // Блокируем скроллинг
+  } else {
+    document.body.classList.remove('overflow-hidden'); // Разблокируем скроллинг
+  }
+    });   
 
 
 
@@ -164,9 +233,9 @@ watch(filters, fetchItems)
 
 
 <template>
-  <Drawer v-if="drawerOpen"/>
+  <Drawer v-if="drawerOpen" @close-drawer="closeDrawer" @close-cart="closeCart" :total-price="totalPrice" :vat-price="vatPrice" @create-order="createOrder" :disabled-button="cartButtonDisabled"/>
   <div class="w-4/5 m-auto bg-white rounded-xl shadow-xl mt-14 pb-8">
-    <Header @open-Drawer="openDrawer"></Header>
+    <Header @open-cart="openCart" @open-Drawer="openDrawer" :total-price="totalPrice"></Header>
 
     <div class="p-10">
       <div class="flex justify-between items-center mb-7">

@@ -19,7 +19,7 @@ defineProps({
         <div class="flex flex-col ">
             <p class="text-sm">{{ title }}</p>
             <div class="flex justify-between justify-center">
-                <b class="hover:font-normal">1 руб.</b>
+                <b class="hover:font-normal">{{ price }}руб.</b>
                 <img @click="()=> emit ('onClickRemove') " src="/public/close.svg" alt="ezz" class="cursor-pointer opacity-40  hover:opacity-100 absolute right-3 bottom-5">
             </div>
         </div>

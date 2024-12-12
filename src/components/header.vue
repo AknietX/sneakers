@@ -1,9 +1,14 @@
 <script setup>
 import { fromJSON } from 'postcss';
+defineProps({
+  totalPrice: Number
+})
 
-
-const emit = defineEmits(['openDrawer',])
-
+const emit = defineEmits(['openDrawer', 'openCart'])
+const totalFunction = () =>{
+  emit('openCart')
+  emit('openDrawer')
+} 
 </script>
 
 
@@ -19,9 +24,9 @@ const emit = defineEmits(['openDrawer',])
       </div> 
       <div class="">
         <ul class="flex items-center gap-10">
-          <li @click="() => emit('openDrawer')" class="flex items-center cursor-pointer gap-3 text-gray-500 hover:text-black">
+          <li @click="totalFunction" class="flex items-center cursor-pointer gap-3 text-gray-500 hover:text-black">
             <img src="/cart.svg" alt="cart">
-            <b>1205 руб.</b>
+            <b>{{ totalPrice }} сом.</b>
           </li>
           <li class="flex items-center cursor-pointer  gap-3 text-gray-500 hover:text-black">
             <img src="/heart.svg" alt="cart">

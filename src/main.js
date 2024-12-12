@@ -1,6 +1,11 @@
 import './assets/main.css'
 
 import { createApp } from 'vue'
-import App from './App.vue'
 
-createApp(App).mount('#app')
+import App from './App.vue'
+const app = createApp(App)
+
+import { autoAnimatePlugin } from '@formkit/auto-animate/vue'
+
+app.use(autoAnimatePlugin)
+app.mount('#app')

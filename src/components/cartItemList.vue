@@ -6,7 +6,7 @@
 </script>
 
 <template>
-    <div class="flex flex-col gap-5 text-clip h-600 mt-5 flex-grow">
+    <div class="flex flex-col gap-5 text-clip h-600 mt-5 flex-grow" v-auto-animate>
 
         <cartItem v-for="item in cart" 
         :key="item.id" 
